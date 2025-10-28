@@ -9,7 +9,13 @@ import Dashboard from "./pages/Dashboard";
 import Bots from "./pages/Bots";
 import VNCViewer from "./pages/VNCViewer";
 import Commands from "./pages/Commands";
-import WiFiDebug from "./pages/WiFiDebug";
+import Connections from "./pages/Connections";
+import Servers from "./pages/Servers";
+import Injection from "./pages/Injection";
+import Logs from "./pages/Logs";
+import FileManager from "./pages/FileManager";
+import Terminal from "./pages/Terminal";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,8 +33,13 @@ const App = () => (
           <Route path="/dashboard/bots" element={<Bots />} />
           <Route path="/dashboard/vnc" element={<VNCViewer />} />
           <Route path="/dashboard/commands" element={<Commands />} />
-          <Route path="/dashboard/wifi-debug" element={<WiFiDebug />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/dashboard/connections" element={<Connections />} />
+          <Route path="/dashboard/servers" element={<Servers />} />
+          <Route path="/dashboard/injection" element={<Injection />} />
+          <Route path="/dashboard/logs" element={<Logs />} />
+          <Route path="/dashboard/files" element={<FileManager />} />
+          <Route path="/dashboard/terminal" element={<Terminal />} />
+          <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

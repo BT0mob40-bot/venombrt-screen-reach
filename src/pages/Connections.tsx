@@ -6,17 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Wifi, Usb, Terminal, Play } from "lucide-react";
 
-const WiFiDebug = () => {
+const Connections = () => {
   return (
     <DashboardLayout>
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            WiFi & USB Debugging
+            Connections
           </h1>
           <p className="text-muted-foreground">
-            Connect to devices via ADB over network or USB
+            Connect to devices via ADB over WiFi or USB
           </p>
         </div>
 
@@ -188,4 +188,4 @@ const WiFiDebug = () => {
   );
 };
 
-export default WiFiDebug;
+export default Connections;

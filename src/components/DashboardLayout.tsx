@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -29,14 +30,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Smartphone, label: "Bots", path: "/dashboard/bots" },
     { icon: Monitor, label: "VNC Viewer", path: "/dashboard/vnc" },
     { icon: Command, label: "Commands", path: "/dashboard/commands" },
-    { icon: Wifi, label: "WiFi Debug", path: "/dashboard/wifi-debug" },
+    { icon: Wifi, label: "Connections", path: "/dashboard/connections" },
+    { icon: Shield, label: "Servers", path: "/dashboard/servers" },
+    { icon: Terminal, label: "Injection", path: "/dashboard/injection" },
+    { icon: FileText, label: "Logs", path: "/dashboard/logs" },
     { icon: FileText, label: "File Manager", path: "/dashboard/files" },
     { icon: Terminal, label: "Terminal", path: "/dashboard/terminal" },
     { icon: Settings, label: "Settings", path: "/dashboard/settings" },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("venombrt_auth");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     toast({
       title: "Logged Out",
       description: "See you soon!",

@@ -1,117 +1,156 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Smartphone } from "lucide-react";
+import { Shield, Mail, Lock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/dashboard");
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session) {
+          navigate("/dashboard");
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate auth for now - will integrate Supabase later
-    setTimeout(() => {
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Welcome back!",
+          description: "Successfully logged in to VenomBRT",
+        });
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+          },
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Account created!",
+          description: "Welcome to VenomBRT",
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: isLogin ? "Login Successful" : "Account Created",
-        description: "Welcome to VenomBRT",
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
-      localStorage.setItem("venombrt_auth", "true");
-      navigate("/dashboard");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl animate-pulse-glow animation-delay-1000" />
-      </div>
-
-      <Card className="w-full max-w-md mx-4 p-8 bg-card border-border relative z-10 animate-slide-in">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <Shield className="w-16 h-16 text-primary" />
-              <Smartphone className="w-8 h-8 text-primary absolute -bottom-1 -right-1" />
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-4 rounded-xl bg-primary/10 shadow-glow-red">
+              <Shield className="w-12 h-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-2 tracking-tight">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             VENOM<span className="text-primary">BRT</span>
           </h1>
           <p className="text-muted-foreground">
-            Advanced Android Remote Control
+            Android Remote Control Platform
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-foreground">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="admin@venombrt.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-input border-border text-foreground focus:ring-primary focus:border-primary"
-            />
+        <Card className="p-8 bg-card border-border shadow-glow-red">
+          <form onSubmit={handleAuth} className="space-y-6">
+            <div>
+              <Label htmlFor="email" className="text-foreground flex items-center gap-2 mb-2">
+                <Mail className="w-4 h-4" />
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                className="bg-input border-border text-foreground"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password" className="text-foreground flex items-center gap-2 mb-2">
+                <Lock className="w-4 h-4" />
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                className="bg-input border-border text-foreground"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
+            </button>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-foreground">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="bg-input border-border text-foreground focus:ring-primary focus:border-primary"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-glow-red transition-all duration-300 hover:shadow-glow-red-strong"
-            disabled={loading}
-          >
-            {loading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            {isLogin
-              ? "Don't have an account? Sign up"
-              : "Already have an account? Sign in"}
-          </button>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-center text-muted-foreground">
-            Secure • Encrypted • Professional RAT Panel
-          </p>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
