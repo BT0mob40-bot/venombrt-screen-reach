@@ -17,6 +17,10 @@ import FileManager from "./pages/FileManager";
 import Terminal from "./pages/Terminal";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
+import Builder from "./pages/Builder";
+import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +43,11 @@ const App = () => (
           <Route path="/dashboard/logs" element={<Logs />} />
           <Route path="/dashboard/files" element={<FileManager />} />
           <Route path="/dashboard/terminal" element={<Terminal />} />
-          <Route path="/dashboard/settings" element={<Settings />} />
+        <Route path="/dashboard/settings" element={<Settings />} />
+        <Route path="/dashboard/admin" element={<Admin />} />
+        <Route path="/dashboard/builder" element={<Builder />} />
+        <Route path="/dashboard/pricing" element={<Pricing />} />
+        <Route path="/dashboard/checkout" element={<Checkout />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

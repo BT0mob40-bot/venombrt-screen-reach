@@ -25,6 +25,7 @@ export type Database = {
           model: string
           name: string
           os: string
+          platform: string
           status: string
           updated_at: string
           user_id: string
@@ -39,6 +40,7 @@ export type Database = {
           model: string
           name: string
           os: string
+          platform?: string
           status?: string
           updated_at?: string
           user_id: string
@@ -53,9 +55,43 @@ export type Database = {
           model?: string
           name?: string
           os?: string
+          platform?: string
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      crypto_addresses: {
+        Row: {
+          address: string
+          coin: string
+          created_at: string
+          id: string
+          is_active: boolean
+          network: string
+          qr_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          coin: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          network: string
+          qr_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          coin?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          network?: string
+          qr_code?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -94,6 +130,50 @@ export type Database = {
           },
         ]
       }
+      licenses: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          license_key: string
+          package_id: string | null
+          platform: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          license_key: string
+          package_id?: string | null
+          platform: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          license_key?: string
+          package_id?: string | null
+          platform?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logs: {
         Row: {
           bot_id: string | null
@@ -128,6 +208,135 @@ export type Database = {
             columns: ["bot_id"]
             isOneToOne: false
             referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_days: number
+          features: string[]
+          id: string
+          is_active: boolean
+          name: string
+          platform: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_days: number
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          name: string
+          platform: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          name?: string
+          platform?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payloads: {
+        Row: {
+          content: string
+          created_at: string
+          file_url: string | null
+          format: string | null
+          id: string
+          name: string
+          platform: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          file_url?: string | null
+          format?: string | null
+          id?: string
+          name: string
+          platform?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          file_url?: string | null
+          format?: string | null
+          id?: string
+          name?: string
+          platform?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          created_at: string
+          crypto_address_id: string
+          expires_at: string
+          id: string
+          package_id: string
+          status: string
+          transaction_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          created_at?: string
+          crypto_address_id: string
+          expires_at: string
+          id?: string
+          package_id: string
+          status?: string
+          transaction_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          crypto_address_id?: string
+          expires_at?: string
+          id?: string
+          package_id?: string
+          status?: string
+          transaction_hash?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_crypto_address_id_fkey"
+            columns: ["crypto_address_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
             referencedColumns: ["id"]
           },
         ]
@@ -195,15 +404,84 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vnc_sessions: {
+        Row: {
+          bot_id: string
+          created_at: string
+          id: string
+          last_update: string
+          screen_data: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          bot_id: string
+          created_at?: string
+          id?: string
+          last_update?: string
+          screen_data?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          bot_id?: string
+          created_at?: string
+          id?: string
+          last_update?: string
+          screen_data?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vnc_sessions_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user" | "demo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -330,6 +608,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user", "demo"],
+    },
   },
 } as const
