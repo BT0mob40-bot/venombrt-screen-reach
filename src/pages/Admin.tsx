@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
-import { Shield, Users, Key, Package, Coins, Trash2 } from "lucide-react";
+import { Shield, Users, Key, Package, Coins, Trash2, Zap, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
@@ -21,6 +21,9 @@ const Admin = () => {
   const [packages, setPackages] = useState<any[]>([]);
   const [licenses, setLicenses] = useState<any[]>([]);
   const [cryptoAddresses, setCryptoAddresses] = useState<any[]>([]);
+  const [features, setFeatures] = useState<any[]>([]);
+  const [featuresSectionName, setFeaturesSectionName] = useState("Platform Features");
+  const [telegramHandle, setTelegramHandle] = useState("");
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -35,16 +38,26 @@ const Admin = () => {
   }, [isAdmin]);
 
   const fetchData = async () => {
-    const [usersData, packagesData, licensesData, cryptoData] = await Promise.all([
+    const [usersData, packagesData, licensesData, cryptoData, featuresData, settingsData] = await Promise.all([
       supabase.from("user_roles").select("*"),
       supabase.from("packages").select("*"),
       supabase.from("licenses").select("*"),
       supabase.from("crypto_addresses").select("*"),
+      supabase.from("features").select("*").order("display_order"),
+      supabase.from("settings_global").select("*").in("key", ["features_section_name", "telegram_handle"]),
     ]);
     setUsers(usersData.data || []);
     setPackages(packagesData.data || []);
     setLicenses(licensesData.data || []);
     setCryptoAddresses(cryptoData.data || []);
+    setFeatures(featuresData.data || []);
+    
+    if (settingsData.data) {
+      const featureName = settingsData.data.find(s => s.key === "features_section_name")?.value;
+      const telegram = settingsData.data.find(s => s.key === "telegram_handle")?.value;
+      if (featureName) setFeaturesSectionName(featureName);
+      if (telegram) setTelegramHandle(telegram);
+    }
   };
 
   const createUser = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -161,6 +174,44 @@ const Admin = () => {
     fetchData();
   };
 
+  const createFeature = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const { error } = await supabase.from("features").insert({
+      title: formData.get("title"),
+      description: formData.get("description"),
+      icon: formData.get("icon") || "Zap",
+      display_order: parseInt(formData.get("display_order") as string) || 0,
+    } as any);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Success", description: "Feature added" });
+    fetchData();
+    e.currentTarget.reset();
+  };
+
+  const updateGlobalSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const updates = [
+      { key: "features_section_name", value: formData.get("features_section_name") as string },
+      { key: "telegram_handle", value: formData.get("telegram_handle") as string },
+    ];
+
+    for (const setting of updates) {
+      await supabase.from("settings_global").upsert(setting, { onConflict: "key" });
+    }
+
+    toast({ title: "Success", description: "Settings updated" });
+    fetchData();
+  };
+
   if (roleLoading) return null;
   if (!isAdmin) return null;
 
@@ -176,11 +227,12 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" />Users</TabsTrigger>
             <TabsTrigger value="licenses"><Key className="w-4 h-4 mr-2" />Licenses</TabsTrigger>
             <TabsTrigger value="packages"><Package className="w-4 h-4 mr-2" />Packages</TabsTrigger>
             <TabsTrigger value="crypto"><Coins className="w-4 h-4 mr-2" />Crypto</TabsTrigger>
+            <TabsTrigger value="features"><Zap className="w-4 h-4 mr-2" />Features</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -382,6 +434,76 @@ const Admin = () => {
                         <p className="text-xs text-muted-foreground font-mono">{crypto.address}</p>
                       </div>
                       <Button variant="destructive" size="sm" onClick={() => deleteItem("crypto_addresses", crypto.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="features">
+            <div className="grid gap-6">
+              <Card className="p-6 bg-card border-border">
+                <h2 className="text-xl font-semibold mb-4 text-foreground">Global Settings</h2>
+                <form onSubmit={updateGlobalSettings} className="space-y-4">
+                  <div>
+                    <Label htmlFor="features_section_name">Features Section Name</Label>
+                    <Input 
+                      id="features_section_name" 
+                      name="features_section_name" 
+                      defaultValue={featuresSectionName}
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="telegram_handle">Telegram Handle</Label>
+                    <Input 
+                      id="telegram_handle" 
+                      name="telegram_handle" 
+                      placeholder="@venomBRT_support"
+                      defaultValue={telegramHandle}
+                      required 
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">Update Settings</Button>
+                </form>
+              </Card>
+
+              <Card className="p-6 bg-card border-border">
+                <h2 className="text-xl font-semibold mb-4 text-foreground">Add Dashboard Feature</h2>
+                <form onSubmit={createFeature} className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Feature Title</Label>
+                    <Input id="title" name="title" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" name="description" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="icon">Icon Name (Lucide)</Label>
+                    <Input id="icon" name="icon" placeholder="Zap, Shield, Lock..." defaultValue="Zap" />
+                  </div>
+                  <div>
+                    <Label htmlFor="display_order">Display Order</Label>
+                    <Input id="display_order" name="display_order" type="number" defaultValue="0" />
+                  </div>
+                  <Button type="submit" className="w-full">Add Feature</Button>
+                </form>
+              </Card>
+
+              <Card className="p-6 bg-card border-border">
+                <h2 className="text-xl font-semibold mb-4 text-foreground">Existing Features</h2>
+                <div className="space-y-2">
+                  {features.map((feature) => (
+                    <div key={feature.id} className="flex items-center justify-between p-3 bg-muted/30 rounded">
+                      <div>
+                        <p className="text-sm font-medium">{feature.title}</p>
+                        <p className="text-xs text-muted-foreground">{feature.description}</p>
+                      </div>
+                      <Button variant="destructive" size="sm" onClick={() => deleteItem("features", feature.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

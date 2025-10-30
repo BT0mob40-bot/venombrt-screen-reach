@@ -1,8 +1,43 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { Activity, Smartphone, Zap, Globe } from "lucide-react";
+import { Activity, Smartphone, Zap, Globe, MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import * as Icons from "lucide-react";
 
 const Dashboard = () => {
+  const [features, setFeatures] = useState<any[]>([]);
+  const [featuresSectionName, setFeaturesSectionName] = useState("Platform Features");
+  const [telegramHandle, setTelegramHandle] = useState("");
+
+  useEffect(() => {
+    fetchFeatures();
+    fetchGlobalSettings();
+  }, []);
+
+  const fetchFeatures = async () => {
+    const { data } = await supabase
+      .from("features")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order");
+    if (data) setFeatures(data);
+  };
+
+  const fetchGlobalSettings = async () => {
+    const { data } = await supabase
+      .from("settings_global")
+      .select("*")
+      .in("key", ["features_section_name", "telegram_handle"]);
+    
+    if (data) {
+      const featureName = data.find(s => s.key === "features_section_name")?.value;
+      const telegram = data.find(s => s.key === "telegram_handle")?.value;
+      if (featureName) setFeaturesSectionName(featureName);
+      if (telegram) setTelegramHandle(telegram);
+    }
+  };
+
   const stats = [
     {
       icon: Smartphone,
@@ -73,6 +108,55 @@ const Dashboard = () => {
             );
           })}
         </div>
+
+        {/* Dynamic Features Section */}
+        {features.length > 0 && (
+          <Card className="p-6 bg-card border-border mb-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
+              {featuresSectionName}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {features.map((feature) => {
+                const IconComponent = (Icons as any)[feature.icon] || Zap;
+                return (
+                  <div
+                    key={feature.id}
+                    className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors border border-border"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <IconComponent className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-foreground mb-1">
+                          {feature.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* Support Section */}
+        {telegramHandle && (
+          <Card className="p-6 bg-card border-border mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <MessageCircle className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Need Support?
+              </h2>
+            </div>
+            <p className="text-muted-foreground">
+              Contact us on Telegram: <span className="text-primary font-medium">{telegramHandle}</span>
+            </p>
+          </Card>
+        )}
 
         {/* Recent Activity */}
         <Card className="p-6 bg-card border-border">

@@ -12,6 +12,7 @@ import {
   Activity,
   Command,
   Package,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Activity, label: "Dashboard", path: "/dashboard" },
     { icon: Smartphone, label: "Bots", path: "/dashboard/bots" },
     { icon: Command, label: "Builder", path: "/dashboard/builder" },
+    { icon: Lock, label: "Obfuscator", path: "/dashboard/obfuscator" },
     { icon: Package, label: "Pricing", path: "/dashboard/pricing" },
     { icon: Command, label: "Commands", path: "/dashboard/commands" },
     { icon: Wifi, label: "Connections", path: "/dashboard/connections" },

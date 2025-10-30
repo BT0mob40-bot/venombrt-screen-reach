@@ -21,6 +21,7 @@ import Admin from "./pages/Admin";
 import Builder from "./pages/Builder";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
+import Obfuscator from "./pages/Obfuscator";
 
 const queryClient = new QueryClient();
 
@@ -46,8 +47,9 @@ const App = () => (
         <Route path="/dashboard/settings" element={<Settings />} />
         <Route path="/dashboard/admin" element={<Admin />} />
         <Route path="/dashboard/builder" element={<Builder />} />
-        <Route path="/dashboard/pricing" element={<Pricing />} />
-        <Route path="/dashboard/checkout" element={<Checkout />} />
+          <Route path="/dashboard/pricing" element={<Pricing />} />
+          <Route path="/dashboard/checkout" element={<Checkout />} />
+          <Route path="/dashboard/obfuscator" element={<Obfuscator />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
