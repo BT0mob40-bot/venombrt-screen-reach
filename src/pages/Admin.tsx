@@ -54,21 +54,34 @@ const Admin = () => {
     const password = formData.get("password") as string;
     const role = formData.get("role") as string;
 
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
+    try {
+      // Use service role to create user directly
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: role
+          }
+        }
+      });
 
-    if (error) {
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("User creation failed");
+
+      // Insert role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({ user_id: authData.user.id, role } as any);
+
+      if (roleError) throw roleError;
+
+      toast({ title: "Success", description: "User created successfully" });
+      fetchData();
+      e.currentTarget.reset();
+    } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-      return;
     }
-
-    await supabase.from("user_roles").insert({ user_id: data.user.id, role } as any);
-    toast({ title: "Success", description: "User created successfully" });
-    fetchData();
-    e.currentTarget.reset();
   };
 
   const generateLicense = async (e: React.FormEvent<HTMLFormElement>) => {

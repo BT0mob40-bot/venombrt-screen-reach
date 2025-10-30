@@ -50,7 +50,7 @@ const Checkout = () => {
 
   const createPayment = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !pkg) return;
+    if (!user || !pkg || cryptoAddresses.length === 0) return;
 
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 30);
@@ -61,7 +61,7 @@ const Checkout = () => {
       crypto_address_id: cryptoAddresses[0]?.id,
       amount: pkg.price,
       expires_at: expiresAt.toISOString(),
-    }).select().single();
+    } as any).select().single();
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -76,7 +76,7 @@ const Checkout = () => {
 
     const { error } = await supabase
       .from("payments")
-      .update({ status: "confirmed" })
+      .update({ status: "confirmed" } as any)
       .eq("id", paymentId);
 
     if (error) {
@@ -86,7 +86,7 @@ const Checkout = () => {
 
     toast({
       title: "Payment Submitted",
-      description: "Your payment will be verified by an administrator",
+      description: "Your payment will be verified by an administrator. You will receive access once confirmed.",
     });
     navigate("/dashboard");
   };
@@ -168,11 +168,12 @@ const Checkout = () => {
             {selectedCrypto && (
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <div className="p-4 bg-background rounded-lg">
+                  <div className="p-4 bg-background rounded-lg border-2 border-border">
                     <QRCodeSVG
                       value={selectedCrypto.address}
                       size={200}
                       level="H"
+                      fgColor="hsl(348 83% 47%)"
                     />
                   </div>
                 </div>
@@ -182,7 +183,7 @@ const Checkout = () => {
                     Wallet Address
                   </label>
                   <div className="flex gap-2">
-                    <div className="flex-1 p-3 bg-muted/30 rounded font-mono text-sm break-all">
+                    <div className="flex-1 p-3 bg-muted/30 rounded font-mono text-sm break-all text-foreground">
                       {selectedCrypto.address}
                     </div>
                     <Button
@@ -197,18 +198,25 @@ const Checkout = () => {
 
                 <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm text-foreground">
-                    <strong>Important:</strong> Send exactly ${pkg.price} worth
-                    of {selectedCrypto.coin} to the address above. After
+                    <strong>Important:</strong> Send exactly <span className="font-bold text-primary">${pkg.price}</span> worth
+                    of {selectedCrypto.coin} ({selectedCrypto.network}) to the address above. After
                     sending, click "I Have Paid" below.
                   </p>
                 </div>
 
                 <Button
                   onClick={confirmPayment}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={timeLeft <= 0}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
                 >
                   I Have Paid
                 </Button>
+
+                {timeLeft <= 0 && (
+                  <p className="text-sm text-destructive text-center">
+                    Payment time expired. Please return to pricing and try again.
+                  </p>
+                )}
               </div>
             )}
           </Card>

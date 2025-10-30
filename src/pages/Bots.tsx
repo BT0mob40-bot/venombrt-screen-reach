@@ -67,14 +67,6 @@ const Bots = () => {
   };
 
   const openVncViewer = (bot: any) => {
-    if (isDemo) {
-      toast({
-        title: "Demo Mode",
-        description: "Upgrade to view device screens",
-        variant: "destructive",
-      });
-      return;
-    }
     setSelectedBot(bot);
     setVncDialogOpen(true);
   };
@@ -214,7 +206,7 @@ const Bots = () => {
               <div className="flex gap-2">
                 <Button
                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  disabled={device.status === "offline" || isDemo}
+                  disabled={device.status === "offline"}
                   onClick={() => {
                     setSelectedBot(device);
                     setCommandDialogOpen(true);
@@ -225,7 +217,7 @@ const Bots = () => {
                 <Button 
                   variant="outline" 
                   className="flex-1"
-                  disabled={device.status === "offline" || isDemo}
+                  disabled={device.status === "offline"}
                   onClick={() => openVncViewer(device)}
                 >
                   <Monitor className="w-4 h-4 mr-2" />
@@ -283,56 +275,62 @@ const Bots = () => {
 
         {/* VNC Viewer Dialog */}
         <Dialog open={vncDialogOpen} onOpenChange={setVncDialogOpen}>
-          <DialogContent className="bg-card border-border max-w-5xl">
+          <DialogContent className="bg-card border-border max-w-5xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-foreground flex items-center gap-2">
                 <Monitor className="w-5 h-5 text-primary" />
-                {selectedBot?.name} - Live Screen
+                {selectedBot?.name} - Live Screen Monitor
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
-              {/* Screen Controls */}
-              <div className="flex items-center justify-center gap-4 p-4 bg-muted/30 rounded-lg">
-                <Button variant="outline" size="icon">
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Home className="w-5 h-5" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Square className="w-5 h-5" />
-                </Button>
-              </div>
-
+            <div className="space-y-6">
               {/* Screen Display */}
-              <div className="relative bg-muted/30 rounded-lg overflow-hidden aspect-[9/16] max-w-md mx-auto border-2 border-border">
-                <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative bg-background rounded-lg overflow-hidden aspect-[9/16] max-w-md mx-auto border-2 border-primary/30 shadow-glow-red">
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-card to-background">
                   <div className="text-center">
-                    <Monitor className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-2">
-                      Connecting to device...
-                    </p>
-                    <p className="text-xs text-muted-foreground">
+                    <Monitor className="w-16 h-16 text-primary mx-auto mb-3 animate-pulse" />
+                    <p className="text-lg font-semibold text-foreground mb-1">Live Screen Mirror</p>
+                    <p className="text-sm text-muted-foreground">Streaming from {selectedBot?.name}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
                       {selectedBot?.platform === "ios" ? "iOS" : "Android"} • {selectedBot?.ip}
                     </p>
                   </div>
                 </div>
               </div>
 
+              {/* Screen Control Buttons */}
+              <div className="flex items-center justify-center gap-3">
+                <Button variant="outline" size="lg" className="bg-card hover:bg-primary/10 border-primary/30">
+                  <ChevronLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+                <Button variant="outline" size="lg" className="bg-card hover:bg-primary/10 border-primary/30">
+                  <Home className="w-5 h-5 mr-2" />
+                  Home
+                </Button>
+                <Button variant="outline" size="lg" className="bg-card hover:bg-primary/10 border-primary/30">
+                  <Square className="w-5 h-5 mr-2" />
+                  Recent
+                </Button>
+              </div>
+
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-muted/30 rounded">
-                  <p className="text-xl font-bold text-foreground">30</p>
+              <div className="grid grid-cols-4 gap-4 p-4 bg-card rounded-lg border border-border">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">30</p>
                   <p className="text-xs text-muted-foreground">FPS</p>
                 </div>
-                <div className="text-center p-3 bg-muted/30 rounded">
-                  <p className="text-xl font-bold text-foreground">45ms</p>
-                  <p className="text-xs text-muted-foreground">Latency</p>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">45</p>
+                  <p className="text-xs text-muted-foreground">Latency (ms)</p>
                 </div>
-                <div className="text-center p-3 bg-muted/30 rounded">
-                  <p className="text-xl font-bold text-foreground">1080p</p>
-                  <p className="text-xs text-muted-foreground">Quality</p>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">1080p</p>
+                  <p className="text-xs text-muted-foreground">Resolution</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">5.2</p>
+                  <p className="text-xs text-muted-foreground">Mbps</p>
                 </div>
               </div>
             </div>
