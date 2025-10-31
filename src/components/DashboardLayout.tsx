@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
+import { useQuery } from "@tanstack/react-query";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -28,6 +29,18 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAdmin } = useRole();
+
+  const { data: websiteName } = useQuery({
+    queryKey: ["website-name"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("settings_global")
+        .select("value")
+        .eq("key", "website_name")
+        .single();
+      return data?.value || "VenomRAT";
+    },
+  });
 
   const navItems = [
     { icon: Activity, label: "Dashboard", path: "/dashboard" },
@@ -67,7 +80,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Shield className="w-8 h-8 text-primary" />
             <div>
               <h2 className="text-xl font-bold text-sidebar-foreground">
-                VENOM<span className="text-primary">BRT</span>
+                {websiteName || "VenomRAT"}
               </h2>
               <p className="text-xs text-muted-foreground">Control Panel</p>
             </div>

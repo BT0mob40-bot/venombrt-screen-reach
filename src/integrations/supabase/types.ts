@@ -26,6 +26,7 @@ export type Database = {
           name: string
           os: string
           platform: string
+          screenshot_url: string | null
           status: string
           updated_at: string
           user_id: string
@@ -41,6 +42,7 @@ export type Database = {
           name: string
           os: string
           platform?: string
+          screenshot_url?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -56,6 +58,7 @@ export type Database = {
           name?: string
           os?: string
           platform?: string
+          screenshot_url?: string | null
           status?: string
           updated_at?: string
           user_id?: string

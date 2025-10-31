@@ -7,14 +7,26 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Mail, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Admin creates users, no public signup
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { data: websiteName } = useQuery({
+    queryKey: ["website-name"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("settings_global")
+        .select("value")
+        .eq("key", "website_name")
+        .single();
+      return data?.value || "VenomRAT";
+    },
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,7 +60,7 @@ const Auth = () => {
 
       toast({
         title: "Welcome back!",
-        description: "Successfully logged in to VenomBRT",
+        description: `Successfully logged in to ${websiteName || "VenomRAT"}`,
       });
     } catch (error: any) {
       toast({
@@ -71,7 +83,7 @@ const Auth = () => {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            VENOM<span className="text-primary">BRT</span>
+            {websiteName || "VenomRAT"}
           </h1>
           <p className="text-muted-foreground">
             Android Remote Control Platform
